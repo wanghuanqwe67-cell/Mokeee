@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
 /* ============================================================
    CONFIG
@@ -547,8 +546,6 @@ class App {
 
     this.distortionPass = new ShaderPass(DistortionShaderDef);
     this.composer.addPass(this.distortionPass);
-
-    this.composer.addPass(new OutputPass());
   }
 
   initGrid() {
