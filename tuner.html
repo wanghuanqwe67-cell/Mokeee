@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parameter Tuner v2</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #000; color: #f0f0f0; font-family: 'Space Grotesk', sans-serif; -webkit-font-smoothing: antialiased; }
+    body { cursor: grab; }
+    body:active { cursor: grabbing; }
+    #canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
+
+    /* ===== PANEL ===== */
+    .panel {
+      position: fixed; top: 0; right: 0; z-index: 100;
+      width: 340px; height: 100vh;
+      background: rgba(0,0,0,0.88);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border-left: 1px solid #1a1a1a;
+      overflow-y: auto; padding: 14px 14px 32px;
+      font-size: 11px;
+      transition: transform 0.35s cubic-bezier(0.16,1,0.3,1);
+      scrollbar-width: thin; scrollbar-color: #333 transparent;
+    }
+    .panel.collapsed { transform: translateX(100%); }
+    .panel::-webkit-scrollbar { width: 4px; }
+    .panel::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+    .panel-toggle {
+      position: fixed; top: 10px; right: 10px; z-index: 101;
+      background: rgba(0,0,0,0.7); border: 1px solid #333;
+      color: #f0f0f0; font-family: 'Space Mono', monospace;
+      font-size: 10px; letter-spacing: 0.1em;
+      padding: 6px 12px; cursor: pointer; border-radius: 3px;
+      transition: all 0.3s;
+    }
+    .panel-toggle:hover { background: #f0f0f0; color: #000; }
+
+    .panel-title {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px; letter-spacing: 0.12em;
+      text-transform: uppercase; color: #f0f0f0;
+      margin-bottom: 14px; padding-bottom: 8px;
+      border-bottom: 1px solid #1a1a1a;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .panel-title small { font-size: 9px; color: #555; font-weight: 400; letter-spacing: 0.05em; }
+
+    .group { margin-bottom: 12px; }
+    .group-header {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px; letter-spacing: 0.1em;
+      text-transform: uppercase; color: #555;
+      margin-bottom: 6px; padding: 3px 0;
+      border-bottom: 1px solid #111;
+    }
+
+    .param { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; height: 22px; }
+    .param label {
+      flex: 0 0 90px;
+      font-family: 'Space Mono', monospace;
+      font-size: 9px; color: #777;
+      text-transform: uppercase; letter-spacing: 0.04em;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .param input[type="range"] {
+      flex: 1; height: 2px;
+      -webkit-appearance: none; appearance: none;
+      background: #2a2a2a; border-radius: 1px; outline: none;
+    }
+    .param input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: 10px; height: 10px;
+      background: #f0f0f0; border-radius: 50%; cursor: pointer;
+    }
+    .param .val {
+      flex: 0 0 42px; text-align: right;
+      font-family: 'Space Mono', monospace;
+      font-size: 9px; color: #f0f0f0;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .btn-row { display: flex; gap: 6px; margin-top: 10px; }
+    .btn {
+      flex: 1; padding: 7px;
+      font-family: 'Space Mono', monospace;
+      font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase;
+      background: #111; border: 1px solid #2a2a2a; color: #888;
+      cursor: pointer; border-radius: 3px; transition: all 0.3s;
+    }
+    .btn:hover { background: #f0f0f0; color: #000; border-color: #f0f0f0; }
+
+    .export-box {
+      margin-top: 10px; padding: 8px;
+      background: #050505; border: 1px solid #1a1a1a; border-radius: 3px;
+      font-family: 'Space Mono', monospace; font-size: 9px;
+      color: #555; white-space: pre-wrap; word-break: break-all;
+      max-height: 140px; overflow-y: auto; display: none;
+    }
+    .export-box.visible { display: block; }
+  </style>
+</head>
+<body>
+
+  <canvas id="canvas"></canvas>
+
+  <button class="panel-toggle" id="panelToggle">PARAMS</button>
+  <div class="panel" id="panel">
+    <div class="panel-title">Parameter Tuner <small>v2 — all params</small></div>
+
+    <!-- CAMERA -->
+    <div class="group">
+      <div class="group-header">Camera</div>
+      <div class="param"><label>FOV</label><input type="range" data-key="camera.fov" min="10" max="90" step="1" value="32"><span class="val">32</span></div>
+      <div class="param"><label>Distance Z</label><input type="range" data-key="camera.z" min="2" max="20" step="0.1" value="8.9"><span class="val">8.9</span></div>
+      <div class="param"><label>Zoom Delta</label><input type="range" data-key="camera.zoomDelta" min="0" max="4" step="0.1" value="1"><span class="val">1.0</span></div>
+    </div>
+
+    <!-- DISTORTION -->
+    <div class="group">
+      <div class="group-header">Lens Distortion</div>
+      <div class="param"><label>Intensity</label><input type="range" data-key="distortion.curved" min="-1.0" max="1.0" step="0.01" value="-0.08"><span class="val">-0.08</span></div>
+      <div class="param"><label>Base Scale</label><input type="range" data-key="distortion.baseScale" min="0.5" max="2.0" step="0.01" value="1.13"><span class="val">1.13</span></div>
+      <div class="param"><label>Lerp Speed</label><input type="range" data-key="distortion.lerpSpeed" min="0.01" max="0.2" step="0.005" value="0.07"><span class="val">0.070</span></div>
+    </div>
+
+    <!-- VIGNETTE -->
+    <div class="group">
+      <div class="group-header">Vignette</div>
+      <div class="param"><label>Offset</label><input type="range" data-key="vignette.offset" min="0.1" max="3.0" step="0.01" value="0.28"><span class="val">0.28</span></div>
+      <div class="param"><label>Darkness</label><input type="range" data-key="vignette.darkness" min="0.0" max="3.0" step="0.01" value="0.24"><span class="val">0.24</span></div>
+    </div>
+
+    <!-- GRID -->
+    <div class="group">
+      <div class="group-header">Grid</div>
+      <div class="param"><label>Columns</label><input type="range" data-key="grid.cols" min="2" max="12" step="1" value="4"><span class="val">4</span></div>
+      <div class="param"><label>Rows</label><input type="range" data-key="grid.rows" min="2" max="16" step="1" value="5"><span class="val">5</span></div>
+      <div class="param"><label>Tile Width</label><input type="range" data-key="grid.tileWidth" min="0.5" max="6.0" step="0.1" value="2.4"><span class="val">2.4</span></div>
+      <div class="param"><label>Tile Height</label><input type="range" data-key="grid.tileHeight" min="0.3" max="5.0" step="0.1" value="1.5"><span class="val">1.5</span></div>
+      <div class="param"><label>Gap X</label><input type="range" data-key="grid.gapX" min="0" max="3.0" step="0.05" value="0.4"><span class="val">0.40</span></div>
+      <div class="param"><label>Gap Y</label><input type="range" data-key="grid.gapY" min="0" max="3.0" step="0.05" value="0.4"><span class="val">0.40</span></div>
+    </div>
+
+    <!-- TILE TEXTURE -->
+    <div class="group">
+      <div class="group-header">Tile Texture</div>
+      <div class="param"><label>Tex Width</label><input type="range" data-key="tile.texW" min="120" max="1024" step="8" value="480"><span class="val">480</span></div>
+      <div class="param"><label>Tex Height</label><input type="range" data-key="tile.texH" min="80" max="800" step="8" value="300"><span class="val">300</span></div>
+    </div>
+
+    <!-- INTERACTION -->
+    <div class="group">
+      <div class="group-header">Interaction</div>
+      <div class="param"><label>Ambient</label><input type="range" data-key="ambient.strength" min="0" max="0.5" step="0.01" value="0.12"><span class="val">0.12</span></div>
+      <div class="param"><label>Drag Lerp</label><input type="range" data-key="drag.lerpFactor" min="0.05" max="1.0" step="0.01" value="0.31"><span class="val">0.31</span></div>
+      <div class="param"><label>Friction</label><input type="range" data-key="drag.friction" min="0.7" max="0.99" step="0.005" value="0.855"><span class="val">0.855</span></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn" id="resetBtn">RESET</button>
+      <button class="btn" id="exportBtn">EXPORT JSON</button>
+      <button class="btn" id="applyBtn">APPLY TO APP.JS</button>
+    </div>
+    <div class="export-box" id="exportBox"></div>
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+/* ========== LIVE CONFIG ========== */
+const CONFIG = {
+  grid: { cols: 4, rows: 5, tileWidth: 2.4, tileHeight: 1.5, gapX: 0.4, gapY: 0.4 },
+  distortion: { flat: 0.0, curved: -0.08, baseScale: 1.13, lerpSpeed: 0.07 },
+  camera: { fov: 32, z: 8.9, zoomDelta: 1 },
+  ambient: { strength: 0.12 },
+  drag: { lerpFactor: 0.31, friction: 0.855 },
+  vignette: { offset: 0.28, darkness: 0.24 },
+  tile: { texW: 480, texH: 300 },
+};
+const DEFAULTS = JSON.parse(JSON.stringify(CONFIG));
+
+/* ========== PROJECTS ========== */
+const PROJECTS = [
+  { name: 'T11', category: 'WEB DESIGN & DEVELOPMENT', year: '2026', color: '#1a1a2e' },
+  { name: 'Teletech', category: 'WEB DESIGN & DEVELOPMENT', year: '2025', color: '#0d0d2a' },
+  { name: 'Offlimits', category: 'WEB DESIGN, INTERACTION DESIGN', year: '2025', color: '#2d1b2e' },
+  { name: 'Hyper Dreams', category: 'WEB DESIGN, INTERACTION DESIGN', year: '2024', color: '#1b2838' },
+  { name: 'Voxnox', category: 'WEB DESIGN & DEVELOPMENT', year: '2024', color: '#0c0c1d' },
+  { name: 'Halflife AI', category: 'BRANDING, AI ART', year: '2024', color: '#1a1a1a' },
+  { name: 'Jinn Agency', category: 'BRANDING, WEB DEVELOPMENT', year: '2023', color: '#0a1628' },
+  { name: 'Echo Studios', category: 'WEB DESIGN & DEVELOPMENT', year: '2023', color: '#1c0a00' },
+  { name: 'Phantom', category: 'WEB DESIGN, DEVELOPMENT', year: '2023', color: '#12121f' },
+  { name: 'Drift', category: 'BRANDING, MOTION', year: '2022', color: '#1a0a2e' },
+];
+
+/* ========== SHADER ========== */
+const DistortionShaderDef = {
+  name: 'DistortionShader',
+  uniforms: {
+    tDiffuse: { value: null },
+    distortion: { value: new THREE.Vector2(0, 0) },
+    baseScale: { value: 1.13 },
+    vignetteOffset: { value: 0.28 },
+    vignetteDarkness: { value: 0.24 },
+  },
+  vertexShader: /* glsl */`
+    varying vec2 vUv;
+    void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
+  `,
+  fragmentShader: /* glsl */`
+    uniform sampler2D tDiffuse;
+    uniform vec2 distortion;
+    uniform float baseScale;
+    uniform float vignetteOffset;
+    uniform float vignetteDarkness;
+    varying vec2 vUv;
+    void main() {
+      vec2 s = 2.0 * (vUv - 0.5);
+      float d = length(s);
+      s *= (baseScale + distortion * dot(s, s));
+      vec2 tUv = s * 0.5 + 0.5;
+      float vig = smoothstep(0.8, vignetteOffset * 0.799, (vignetteDarkness + vignetteOffset) * d);
+      vec3 c = texture2D(tDiffuse, tUv).rgb * vig;
+      gl_FragColor = vec4(c, 1.0);
+    }
+  `,
+};
+
+/* ========== TILE TEXTURE ========== */
+function createTileTexture(project) {
+  var w = CONFIG.tile.texW, h = CONFIG.tile.texH;
+  var c = document.createElement('canvas');
+  var dpr = Math.min(devicePixelRatio, 2);
+  c.width = w * dpr; c.height = h * dpr;
+  var ctx = c.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.fillStyle = project.color; ctx.fillRect(0, 0, w, h);
+  var g = ctx.createLinearGradient(0, 0, w, h);
+  g.addColorStop(0, 'rgba(255,255,255,0.03)'); g.addColorStop(1, 'rgba(0,0,0,0.15)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+  ctx.strokeStyle = 'rgba(240,240,240,0.06)'; ctx.lineWidth = 1;
+  ctx.strokeRect(0.5, 0.5, w - 1, h - 1);
+  ctx.fillStyle = 'rgba(240,240,240,0.07)';
+  ctx.font = 'bold ' + Math.floor(w * 0.13) + 'px "Space Grotesk", sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(project.name.toUpperCase(), w / 2, h / 2 - 10);
+  ctx.fillStyle = 'rgba(240,240,240,0.35)';
+  ctx.font = '500 ' + Math.floor(w * 0.032) + 'px "Space Mono", monospace';
+  ctx.fillText(project.category, w / 2, h * 0.72);
+  ctx.fillStyle = 'rgba(240,240,240,0.25)';
+  ctx.font = '400 ' + Math.floor(w * 0.028) + 'px "Space Mono", monospace';
+  ctx.fillText(project.year, w / 2, h * 0.82);
+  ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(240,240,240,0.6)';
+  ctx.font = '600 ' + Math.floor(w * 0.05) + 'px "Space Grotesk", sans-serif';
+  ctx.fillText(project.name, 20, h - 24);
+  var tex = new THREE.CanvasTexture(c);
+  tex.minFilter = THREE.LinearFilter; tex.magFilter = THREE.LinearFilter;
+  return tex;
+}
+
+/* ========== GRID ========== */
+class InfiniteGrid {
+  constructor(scene) {
+    this.scene = scene;
+    this.group = new THREE.Group();
+    this.scene.add(this.group);
+    this.tiles = [];
+    this.offset = new THREE.Vector2(0, 0);
+    this.build();
+  }
+  build() {
+    for (var t of this.tiles) { t.geometry.dispose(); t.material.dispose(); this.group.remove(t); }
+    this.tiles = [];
+    var { cols, rows, tileWidth, tileHeight, gapX, gapY } = CONFIG.grid;
+    this.cols = cols; this.rows = rows;
+    this.cellW = tileWidth + gapX; this.cellH = tileHeight + gapY;
+    this.totalW = cols * this.cellW; this.totalH = rows * this.cellH;
+    var geo = new THREE.PlaneGeometry(tileWidth, tileHeight);
+    for (var r = 0; r < rows; r++) {
+      for (var c = 0; c < cols; c++) {
+        var proj = PROJECTS[(r * cols + c) % PROJECTS.length];
+        var tex = createTileTexture(proj);
+        var mat = new THREE.MeshBasicMaterial({ map: tex });
+        var mesh = new THREE.Mesh(geo, mat);
+        mesh.userData = { col: c, row: r };
+        this.group.add(mesh); this.tiles.push(mesh);
+      }
+    }
+    this.updatePositions();
+  }
+  updatePositions() {
+    for (var tile of this.tiles) {
+      var { col, row } = tile.userData;
+      var x = col * this.cellW - (this.totalW / 2) + this.cellW / 2 + this.offset.x;
+      var y = -(row * this.cellH - (this.totalH / 2) + this.cellH / 2) + this.offset.y;
+      x = ((x % this.totalW) + this.totalW) % this.totalW;
+      y = ((y % this.totalH) + this.totalH) % this.totalH;
+      if (x > this.totalW / 2) x -= this.totalW;
+      if (y > this.totalH / 2) y -= this.totalH;
+      tile.position.set(x, y, 0);
+    }
+  }
+  setOffset(x, y) { this.offset.set(x, y); this.updatePositions(); }
+}
+
+/* ========== NAVIGATION ========== */
+class Navigation {
+  constructor(canvas) {
+    this.canvas = canvas; this.isDragging = false;
+    this.pointerUv = new THREE.Vector2(0.5, 0.5);
+    this.dragStart = new THREE.Vector2();
+    this.positionOffset = new THREE.Vector2();
+    this.velocity = new THREE.Vector2();
+    this.dragAction = new THREE.Vector2();
+    canvas.addEventListener('pointerdown', this.onDown);
+    canvas.addEventListener('pointermove', this.onMove);
+    canvas.addEventListener('pointerup', this.onUp);
+    canvas.addEventListener('pointerleave', this.onUp);
+  }
+  onDown = (e) => { this.isDragging = true; this.dragStart.set(e.clientX, e.clientY); this.canvas.setPointerCapture(e.pointerId); };
+  onMove = (e) => {
+    this.pointerUv.set(e.clientX / innerWidth, e.clientY / innerHeight);
+    if (this.isDragging) {
+      this.dragAction.set((e.clientX - this.dragStart.x) * 0.005, -(e.clientY - this.dragStart.y) * 0.005);
+      this.dragStart.set(e.clientX, e.clientY);
+    }
+  };
+  onUp = () => { this.isDragging = false; };
+  getAmbientOffset() { return this.pointerUv.clone().subScalar(0.5).multiplyScalar(CONFIG.ambient.strength); }
+  update() {
+    if (this.isDragging && (this.dragAction.x || this.dragAction.y)) {
+      this.velocity.lerp(this.dragAction, CONFIG.drag.lerpFactor);
+      this.positionOffset.add(this.dragAction.clone());
+      this.dragAction.set(0, 0);
+    } else {
+      this.positionOffset.add(this.velocity);
+      this.velocity.multiplyScalar(CONFIG.drag.friction);
+      if (this.velocity.length() < 0.0001) this.velocity.set(0, 0);
+    }
+    return this.positionOffset;
+  }
+}
+
+/* ========== APP ========== */
+class App {
+  constructor() {
+    this.canvas = document.getElementById('canvas');
+    this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
+    this.renderer.setSize(innerWidth, innerHeight);
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    this.renderer.setClearColor(0x000000);
+    this.scene = new THREE.Scene();
+    this.camera = new THREE.PerspectiveCamera(CONFIG.camera.fov, innerWidth / innerHeight, 0.1, 100);
+    this.camera.position.z = CONFIG.camera.z;
+    this.composer = new EffectComposer(this.renderer);
+    this.composer.addPass(new RenderPass(this.scene, this.camera));
+    this.distortionPass = new ShaderPass(DistortionShaderDef);
+    this.composer.addPass(this.distortionPass);
+    this.composer.addPass(new OutputPass());
+    this.distortionIntensity = CONFIG.distortion.flat;
+    this.targetDistortion = CONFIG.distortion.curved;
+    this.grid = new InfiniteGrid(this.scene);
+    this.nav = new Navigation(this.canvas);
+    this.targetCameraZ = CONFIG.camera.z;
+    this.canvas.addEventListener('pointerdown', () => { this.targetCameraZ = CONFIG.camera.z + CONFIG.camera.zoomDelta; });
+    this.canvas.addEventListener('pointerup', () => { this.targetCameraZ = CONFIG.camera.z; });
+    window.addEventListener('resize', () => {
+      this.camera.aspect = innerWidth / innerHeight;
+      this.camera.updateProjectionMatrix();
+      this.renderer.setSize(innerWidth, innerHeight);
+      this.composer.setSize(innerWidth, innerHeight);
+    });
+    this.animate();
+  }
+  rebuildGrid() { this.grid.build(); }
+  updateCamera() {
+    this.camera.fov = CONFIG.camera.fov;
+    this.camera.updateProjectionMatrix();
+    this.targetCameraZ = CONFIG.camera.z;
+  }
+  animate = () => {
+    requestAnimationFrame(this.animate);
+    var off = this.nav.update();
+    var amb = this.nav.getAmbientOffset();
+    this.grid.setOffset(off.x + amb.x, off.y - amb.y);
+    this.camera.position.z += (this.targetCameraZ - this.camera.position.z) * 0.06;
+    // Distortion
+    this.targetDistortion = CONFIG.distortion.curved;
+    this.distortionIntensity += (this.targetDistortion - this.distortionIntensity) * CONFIG.distortion.lerpSpeed;
+    var ratio = innerWidth / innerHeight;
+    var u = this.distortionPass.uniforms;
+    u.distortion.value.set(this.distortionIntensity * ratio, this.distortionIntensity);
+    u.baseScale.value = CONFIG.distortion.baseScale;
+    u.vignetteOffset.value = CONFIG.vignette.offset;
+    u.vignetteDarkness.value = CONFIG.vignette.darkness;
+    this.composer.render();
+  };
+}
+
+/* ========== BOOT ========== */
+var app = new App();
+
+/* ========== PANEL ========== */
+var panel = document.getElementById('panel');
+var toggle = document.getElementById('panelToggle');
+toggle.addEventListener('click', () => {
+  panel.classList.toggle('collapsed');
+  toggle.textContent = panel.classList.contains('collapsed') ? 'PARAMS' : 'HIDE';
+});
+
+var sliders = panel.querySelectorAll('input[type="range"]');
+sliders.forEach(slider => {
+  var valSpan = slider.parentElement.querySelector('.val');
+  slider.addEventListener('input', () => {
+    var v = parseFloat(slider.value);
+    var step = slider.step;
+    var decimals = step.includes('.') ? step.split('.')[1].length : 0;
+    valSpan.textContent = decimals > 0 ? v.toFixed(decimals) : String(v);
+    var [group, prop] = slider.dataset.key.split('.');
+    CONFIG[group][prop] = v;
+    if (group === 'grid' || group === 'tile') app.rebuildGrid();
+    if (group === 'camera' && (prop === 'fov' || prop === 'z')) app.updateCamera();
+  });
+});
+
+// Reset
+document.getElementById('resetBtn').addEventListener('click', () => {
+  for (var g in DEFAULTS) Object.assign(CONFIG[g], DEFAULTS[g]);
+  sliders.forEach(s => {
+    var [g, p] = s.dataset.key.split('.');
+    var v = CONFIG[g][p]; s.value = v;
+    var step = s.step;
+    var decimals = step.includes('.') ? step.split('.')[1].length : 0;
+    s.parentElement.querySelector('.val').textContent = decimals > 0 ? v.toFixed(decimals) : String(v);
+  });
+  app.rebuildGrid(); app.updateCamera();
+});
+
+// Export
+document.getElementById('exportBtn').addEventListener('click', () => {
+  var box = document.getElementById('exportBox');
+  box.classList.toggle('visible');
+  if (box.classList.contains('visible')) {
+    box.textContent = JSON.stringify({
+      grid: CONFIG.grid,
+      distortion: { curved: CONFIG.distortion.curved, baseScale: CONFIG.distortion.baseScale, lerpSpeed: CONFIG.distortion.lerpSpeed },
+      camera: CONFIG.camera,
+      vignette: CONFIG.vignette,
+      ambient: CONFIG.ambient,
+      drag: CONFIG.drag,
+      tile: CONFIG.tile,
+    }, null, 2);
+  }
+});
+
+// Apply hint
+document.getElementById('applyBtn').addEventListener('click', () => {
+  var box = document.getElementById('exportBox');
+  box.classList.add('visible');
+  box.textContent = 'Copy the EXPORT JSON output and paste it\nin your chat to update app.js parameters.';
+});
+
+// Prevent panel dragging canvas
+panel.addEventListener('pointerdown', e => e.stopPropagation());
+panel.addEventListener('pointermove', e => e.stopPropagation());
+toggle.addEventListener('pointerdown', e => e.stopPropagation());
+  </script>
+</body>
+</html>

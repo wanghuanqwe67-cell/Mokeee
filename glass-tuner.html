@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liquid Glass Tuner</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0a0a0a;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+    }
+
+    /* === PREVIEW AREA === */
+    .preview {
+      flex: 1;
+      position: relative;
+      overflow: auto;
+    }
+    .preview-scroll {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+      padding: 4px;
+      min-height: 200vh;
+    }
+    .preview-scroll img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      display: block;
+      border-radius: 4px;
+    }
+
+    /* === FLOATING BAR === */
+    .glass-bar {
+      position: fixed;
+      bottom: var(--bar-bottom, 56px);
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      justify-content: center;
+      border-radius: var(--bar-radius, 56px);
+      z-index: 10;
+    }
+    .glass-bar__bg {
+      position: absolute; inset: 0;
+      z-index: -1;
+      overflow: hidden;
+      border-radius: var(--bar-radius, 56px);
+      border: var(--border-width, 1px) solid rgba(255,255,255, var(--border-opacity, 0.06));
+    }
+    .glass-bar__warp {
+      position: absolute; inset: 0;
+      backdrop-filter: blur(var(--blur, 24px)) saturate(var(--saturate, 140%));
+      -webkit-backdrop-filter: blur(var(--blur, 24px)) saturate(var(--saturate, 140%));
+      filter: url(#glass-filter);
+    }
+    .glass-bar__tint {
+      position: absolute; inset: 0;
+      pointer-events: none;
+      background: rgba(0,0,0, var(--tint-opacity, 0.25));
+    }
+    .glass-bar__specular {
+      position: absolute; inset: 0;
+      pointer-events: none;
+      background: linear-gradient(
+        180deg,
+        rgba(255,255,255, var(--specular-top, 0.08)) 0%,
+        rgba(255,255,255, var(--specular-mid, 0.02)) 40%,
+        transparent 100%
+      );
+      border-top: 0.5px solid rgba(255,255,255, var(--specular-edge, 0.12));
+    }
+    .glass-bar a {
+      position: relative;
+      padding: 14px 28px;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    .glass-bar a:hover { color: rgba(255,255,255,0.9); }
+    .glass-bar a.active { color: #fff; }
+
+    /* === PANEL === */
+    .panel {
+      width: 360px;
+      background: #111;
+      border-left: 1px solid #222;
+      padding: 20px;
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+    .panel h2 {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #222;
+    }
+    .panel h3 {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #555;
+      margin: 16px 0 8px;
+    }
+    .param {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .param label {
+      flex: 0 0 120px;
+      font-size: 11px;
+      font-weight: 500;
+      color: #999;
+      letter-spacing: 0.04em;
+    }
+    .param input[type="range"] {
+      flex: 1;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 4px;
+      background: #333;
+      border-radius: 2px;
+      outline: none;
+    }
+    .param input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: #fff;
+      cursor: pointer;
+    }
+    .param .val {
+      flex: 0 0 50px;
+      text-align: right;
+      font-size: 12px;
+      font-weight: 500;
+      color: #ccc;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .export-btn {
+      display: block;
+      width: 100%;
+      margin-top: 20px;
+      padding: 10px;
+      background: #222;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #ccc;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.2s;
+    }
+    .export-btn:hover { background: #2a2a2a; }
+
+    #export-output {
+      margin-top: 12px;
+      padding: 12px;
+      background: #0a0a0a;
+      border: 1px solid #222;
+      border-radius: 8px;
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 11px;
+      color: #8f8;
+      white-space: pre-wrap;
+      word-break: break-all;
+      display: none;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SVG Filter -->
+  <svg style="position:absolute;width:0;height:0" aria-hidden="true">
+    <defs>
+      <filter id="glass-filter" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">
+        <feImage id="fe-disp-img" x="0" y="0" width="100%" height="100%" result="DISP_MAP"
+          href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='50'%3E%3Cdefs%3E%3CradialGradient id='g' cx='50%25' cy='50%25' r='50%25'%3E%3Cstop offset='0%25' stop-color='%23808080'/%3E%3Cstop offset='70%25' stop-color='%23808080'/%3E%3Cstop offset='100%25' stop-color='%23606060'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' width='200' height='50'/%3E%3C/svg%3E"
+          preserveAspectRatio="none" />
+        <feDisplacementMap id="fe-disp" in="SourceGraphic" in2="DISP_MAP" scale="8" xChannelSelector="R" yChannelSelector="G" result="DISPLACED" />
+        <feGaussianBlur id="fe-blur" in="DISPLACED" stdDeviation="0.5" />
+      </filter>
+    </defs>
+  </svg>
+
+  <!-- Preview -->
+  <div class="preview">
+    <div class="preview-scroll">
+      <img src="https://picsum.photos/seed/a1/400/400" alt="">
+      <img src="https://picsum.photos/seed/a2/400/400" alt="">
+      <img src="https://picsum.photos/seed/a3/400/400" alt="">
+      <img src="https://picsum.photos/seed/a4/400/400" alt="">
+      <img src="https://picsum.photos/seed/a5/400/400" alt="">
+      <img src="https://picsum.photos/seed/a6/400/400" alt="">
+      <img src="https://picsum.photos/seed/a7/400/400" alt="">
+      <img src="https://picsum.photos/seed/a8/400/400" alt="">
+      <img src="https://picsum.photos/seed/a9/400/400" alt="">
+      <img src="https://picsum.photos/seed/b1/400/400" alt="">
+      <img src="https://picsum.photos/seed/b2/400/400" alt="">
+      <img src="https://picsum.photos/seed/b3/400/400" alt="">
+      <img src="https://picsum.photos/seed/b4/400/400" alt="">
+      <img src="https://picsum.photos/seed/b5/400/400" alt="">
+      <img src="https://picsum.photos/seed/b6/400/400" alt="">
+      <img src="https://picsum.photos/seed/b7/400/400" alt="">
+      <img src="https://picsum.photos/seed/b8/400/400" alt="">
+      <img src="https://picsum.photos/seed/b9/400/400" alt="">
+    </div>
+
+    <div class="glass-bar" id="glassBar">
+      <div class="glass-bar__bg">
+        <span class="glass-bar__warp"></span>
+        <span class="glass-bar__tint"></span>
+        <span class="glass-bar__specular"></span>
+      </div>
+      <a href="#">INDEX</a>
+      <a href="#" class="active">PROJECTS</a>
+      <a href="#">STORE</a>
+      <a href="#">LABS</a>
+    </div>
+  </div>
+
+  <!-- Control Panel -->
+  <div class="panel">
+    <h2>Liquid Glass Tuner</h2>
+
+    <h3>Layout</h3>
+    <div class="param">
+      <label>BOTTOM</label>
+      <input type="range" min="0" max="120" step="1" value="56" data-var="--bar-bottom" data-unit="px">
+      <span class="val">56</span>
+    </div>
+    <div class="param">
+      <label>BORDER RADIUS</label>
+      <input type="range" min="0" max="100" step="1" value="56" data-var="--bar-radius" data-unit="px">
+      <span class="val">56</span>
+    </div>
+
+    <h3>Backdrop Filter</h3>
+    <div class="param">
+      <label>BLUR</label>
+      <input type="range" min="0" max="80" step="1" value="24" data-var="--blur" data-unit="px">
+      <span class="val">24</span>
+    </div>
+    <div class="param">
+      <label>SATURATE</label>
+      <input type="range" min="100" max="300" step="5" value="140" data-var="--saturate" data-unit="%">
+      <span class="val">140</span>
+    </div>
+
+    <h3>SVG Displacement</h3>
+    <div class="param">
+      <label>DISP SCALE</label>
+      <input type="range" min="0" max="40" step="1" value="8" data-svg="disp-scale">
+      <span class="val">8</span>
+    </div>
+    <div class="param">
+      <label>POST BLUR</label>
+      <input type="range" min="0" max="5" step="0.1" value="0.5" data-svg="post-blur">
+      <span class="val">0.5</span>
+    </div>
+
+    <h3>Tint</h3>
+    <div class="param">
+      <label>TINT OPACITY</label>
+      <input type="range" min="0" max="1" step="0.01" value="0.25" data-var="--tint-opacity">
+      <span class="val">0.25</span>
+    </div>
+
+    <h3>Border</h3>
+    <div class="param">
+      <label>BORDER WIDTH</label>
+      <input type="range" min="0" max="3" step="0.5" value="1" data-var="--border-width" data-unit="px">
+      <span class="val">1</span>
+    </div>
+    <div class="param">
+      <label>BORDER OPACITY</label>
+      <input type="range" min="0" max="0.5" step="0.01" value="0.06" data-var="--border-opacity">
+      <span class="val">0.06</span>
+    </div>
+
+    <h3>Specular / Highlight</h3>
+    <div class="param">
+      <label>TOP GLOW</label>
+      <input type="range" min="0" max="0.5" step="0.01" value="0.08" data-var="--specular-top">
+      <span class="val">0.08</span>
+    </div>
+    <div class="param">
+      <label>MID GLOW</label>
+      <input type="range" min="0" max="0.3" step="0.005" value="0.02" data-var="--specular-mid">
+      <span class="val">0.02</span>
+    </div>
+    <div class="param">
+      <label>EDGE HIGHLIGHT</label>
+      <input type="range" min="0" max="0.5" step="0.01" value="0.12" data-var="--specular-edge">
+      <span class="val">0.12</span>
+    </div>
+
+    <button class="export-btn" id="exportBtn">EXPORT CSS VALUES</button>
+    <pre id="export-output"></pre>
+  </div>
+
+  <script>
+    const bar = document.getElementById('glassBar');
+    const feDisp = document.getElementById('fe-disp');
+    const feBlur = document.getElementById('fe-blur');
+    const exportBtn = document.getElementById('exportBtn');
+    const exportOut = document.getElementById('export-output');
+
+    // CSS variable sliders
+    document.querySelectorAll('.param input[data-var]').forEach(input => {
+      input.addEventListener('input', () => {
+        const unit = input.dataset.unit || '';
+        const val = input.value;
+        bar.style.setProperty(input.dataset.var, val + unit);
+        input.nextElementSibling.textContent = val;
+      });
+    });
+
+    // SVG filter sliders
+    document.querySelectorAll('.param input[data-svg]').forEach(input => {
+      input.addEventListener('input', () => {
+        const val = input.value;
+        input.nextElementSibling.textContent = val;
+        if (input.dataset.svg === 'disp-scale') {
+          feDisp.setAttribute('scale', val);
+        } else if (input.dataset.svg === 'post-blur') {
+          feBlur.setAttribute('stdDeviation', val);
+        }
+      });
+    });
+
+    // Export
+    exportBtn.addEventListener('click', () => {
+      const values = {};
+      document.querySelectorAll('.param input').forEach(input => {
+        const name = input.dataset.var || input.dataset.svg;
+        values[name] = input.value + (input.dataset.unit || '');
+      });
+      exportOut.style.display = 'block';
+      exportOut.textContent = JSON.stringify(values, null, 2);
+    });
+  </script>
+</body>
+</html>
