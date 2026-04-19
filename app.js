@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
 /* ============================================================
    CONFIG
@@ -461,9 +462,12 @@ class DistortionManager {
       this.targetIntensity = CONFIG.distortion.curved;
       this.targetBaseScale = CONFIG.distortion.baseScale;
     }
-    // Smooth lerp
-    this.intensity += (this.targetIntensity - this.intensity) * 0.035;
-    this.baseScale += (this.targetBaseScale - this.baseScale) * 0.035;
+    // Keep normal smoothing for runtime tuning, but snap faster during intro.
+    const introLerp = 0.12;
+    const normalLerp = 0.035;
+    const lerp = this.introActive ? introLerp : normalLerp;
+    this.intensity += (this.targetIntensity - this.intensity) * lerp;
+    this.baseScale += (this.targetBaseScale - this.baseScale) * lerp;
     const ratio = window.innerWidth / window.innerHeight;
     uniforms.distortion.value.set(
       this.intensity * ratio,
@@ -506,10 +510,9 @@ class App {
       // Trigger entrance animation
       requestAnimationFrame(() => {
         document.body.classList.remove('intro');
-        setTimeout(() => {
-          this.distortionManager.endIntro();
-          this.targetCameraZ = CONFIG.camera.z;
-        }, 200);
+        // No extra wait for center tiles entrance; make canvas settle immediately.
+        this.distortionManager.endIntro();
+        this.targetCameraZ = CONFIG.camera.z;
       });
     });
 
@@ -546,6 +549,8 @@ class App {
 
     this.distortionPass = new ShaderPass(DistortionShaderDef);
     this.composer.addPass(this.distortionPass);
+
+    this.composer.addPass(new OutputPass());
   }
 
   initGrid() {
@@ -705,12 +710,12 @@ class App {
     // Camera zoom (smooth)
     this.camera.fov = CONFIG.camera.fov;
     this.camera.updateProjectionMatrix();
-    this.camera.position.z += (this.targetCameraZ - this.camera.position.z) * 0.04;
+    this.camera.position.z += (this.targetCameraZ - this.camera.position.z) * 0.1;
 
     // Intro scale animation (grid scales from small to 1.0)
     if (this.introScaleActive) {
       const s = this.grid.group.scale.x;
-      const ns = s + (1 - s) * 0.04;
+      const ns = s + (1 - s) * 0.1;
       this.grid.group.scale.set(ns, ns, 1);
       if (Math.abs(1 - ns) < 0.001) {
         this.grid.group.scale.set(1, 1, 1);

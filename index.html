@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NAUGHTYDUK© — PROJECTS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -435,27 +438,11 @@
   <script type="importmap">
   {
     "imports": {
-      "three": "./vendor/three/build/three.module.js",
-      "three/addons/": "./vendor/three/examples/jsm/"
+      "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
     }
   }
   </script>
-  <script>
-    // Fallback: avoid getting stuck on LOADING forever if module import fails.
-    window.addEventListener('error', () => {
-      const loader = document.getElementById('loader');
-      if (loader) loader.classList.add('hidden');
-      document.body.classList.remove('intro');
-    }, { once: true });
-
-    setTimeout(() => {
-      const loader = document.getElementById('loader');
-      if (loader && !loader.classList.contains('hidden')) {
-        loader.classList.add('hidden');
-        document.body.classList.remove('intro');
-      }
-    }, 7000);
-  </script>
-  <script type="module" src="app.js?v=20"></script>
+  <script type="module" src="app.js?v=16"></script>
 </body>
 </html>

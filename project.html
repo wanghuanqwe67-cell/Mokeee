@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Project — NAUGHTYDUK©</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
@@ -13,7 +16,7 @@
       --fg-muted: #555;
       --border: rgba(255,255,255,0.08);
       --max: 1280px;
-      --pad: 32px;
+      --pad: 24px;
     }
     html, body {
       background: var(--bg);
@@ -26,14 +29,16 @@
     a { color: inherit; text-decoration: none; }
     img, video { display: block; max-width: 100%; height: auto; }
 
-    /* ===== TOP BAR (mirrors index.html: stacked mask-blur) ===== */
+    /* ===== TOP BAR ===== */
     .top-bar {
       position: fixed; top: 0; left: 0; right: 0;
-      z-index: 10;
+      z-index: 50;
       display: flex; justify-content: space-between; align-items: center;
-      height: 36px; padding: 0 20px;
+      height: 48px; padding: 0 20px;
       font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
-      pointer-events: auto;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      background: linear-gradient(to bottom, rgba(0,0,0,0.55), rgba(0,0,0,0));
     }
     .top-bar a.back {
       display: inline-flex; align-items: center; gap: 8px;
@@ -42,48 +47,8 @@
     .top-bar a.back:hover { opacity: 1; }
     .top-bar .arrow { display: inline-block; transform: translateY(-1px); }
 
-    .top-blur {
-      position: fixed; top: 0; left: 0; right: 0;
-      z-index: 9; height: 56px; pointer-events: none; overflow: visible;
-    }
-    .top-blur::before {
-      content: ''; position: absolute;
-      top: -30px; right: -30px; bottom: -30px; left: -30px;
-      pointer-events: none; filter: blur(18px);
-      background: linear-gradient(to bottom,
-        rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.25) 40%, transparent 100%);
-    }
-    .top-blur::after {
-      content: ''; position: absolute; inset: 0; pointer-events: none;
-      background: linear-gradient(to bottom,
-        rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.7) 20%,
-        rgba(0,0,0,0.45) 45%, rgba(0,0,0,0.2) 70%, transparent 100%);
-    }
-    .blur-layer {
-      position: absolute; inset: 0; background: transparent;
-      backdrop-filter: blur(var(--bar-blur));
-      -webkit-backdrop-filter: blur(var(--bar-blur));
-      mask-repeat: no-repeat; mask-size: 100% 100%;
-      -webkit-mask-repeat: no-repeat; -webkit-mask-size: 100% 100%;
-    }
-    .blur-layer--1 { --bar-blur: 3px;
-      mask-image: linear-gradient(to bottom, transparent 0%, transparent 40%, #000 58%, #000 78%, transparent 100%);
-      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, transparent 40%, #000 58%, #000 78%, transparent 100%); }
-    .blur-layer--2 { --bar-blur: 6px;
-      mask-image: linear-gradient(to bottom, transparent 0%, transparent 20%, #000 38%, #000 58%, transparent 78%, transparent 100%);
-      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, transparent 20%, #000 38%, #000 58%, transparent 78%, transparent 100%); }
-    .blur-layer--3 { --bar-blur: 12px;
-      mask-image: linear-gradient(to bottom, transparent 0%, #000 18%, #000 38%, transparent 58%, transparent 100%);
-      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 18%, #000 38%, transparent 58%, transparent 100%); }
-    .blur-layer--4 { --bar-blur: 20px;
-      mask-image: linear-gradient(to bottom, #000 0%, #000 18%, transparent 38%, transparent 100%);
-      -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 18%, transparent 38%, transparent 100%); }
-    .blur-layer--5 { --bar-blur: 36px;
-      mask-image: linear-gradient(to bottom, #000 0%, transparent 18%, transparent 100%);
-      -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 18%, transparent 100%); }
-
     /* ===== LAYOUT ===== */
-    main { padding-top: 36px; }
+    main { padding-top: 48px; }
     section { width: 100%; }
     .container { max-width: var(--max); margin: 0 auto; padding: 0 var(--pad); }
 
@@ -91,10 +56,7 @@
     .hero {
       padding: 96px 0 56px;
     }
-    .hero .container {
-      display: flex; flex-direction: column; gap: 28px;
-      max-width: none; padding: 0 var(--pad);
-    }
+    .hero .container { display: flex; flex-direction: column; gap: 28px; }
     .hero .meta-row {
       display: flex; gap: 24px; font-size: 10px; letter-spacing: 0.1em;
       text-transform: uppercase; color: var(--fg-dim);
@@ -107,7 +69,15 @@
       font-size: clamp(16px, 1.6vw, 22px);
       color: var(--fg-dim); max-width: 640px;
     }
-    .hero-media { margin-top: 24px; }
+    .hero-media {
+      margin-top: 24px;
+      width: 100%;
+      aspect-ratio: 16/9;
+      overflow: hidden;
+      border-radius: 4px;
+      background: #111;
+    }
+    .hero-media img, .hero-media video { width: 100%; height: 100%; object-fit: cover; }
 
     /* TEXT BLOCK */
     .block-text { padding: 80px 0; }
@@ -128,33 +98,23 @@
       .block-text .container { grid-template-columns: 1fr; gap: 16px; }
     }
 
-    /* Shared media frame — 统一 16/9，和 hero-media 一致 */
-    .media-frame {
-      width: 100%;
-      aspect-ratio: 16/9;
-      overflow: hidden;
-      border-radius: 4px;
-      background: #111;
-    }
-    .media-frame > img,
-    .media-frame > video { width: 100%; height: 100%; object-fit: cover; display: block; }
-
-    /* IMAGE BLOCK — 全宽自适应，左右 32px 边距 */
+    /* IMAGE BLOCK */
     .block-image { padding: 32px 0; }
-    .block-image .container { max-width: none; padding: 0 var(--pad); }
+    .block-image.full .container { max-width: none; padding: 0; }
     .block-image figure { display: flex; flex-direction: column; gap: 12px; }
+    .block-image img { width: 100%; }
     .block-image figcaption {
       font-size: 11px; color: var(--fg-dim); letter-spacing: 0.06em;
-      text-transform: uppercase;
+      text-transform: uppercase; padding: 0 var(--pad);
     }
 
     /* VIDEO BLOCK */
     .block-video { padding: 32px 0; }
-    .block-video .container { max-width: none; padding: 0 var(--pad); }
+    .block-video.full .container { max-width: none; padding: 0; }
+    .block-video video { width: 100%; }
 
     /* GALLERY */
     .block-gallery { padding: 32px 0; }
-    .block-gallery .container { max-width: none; padding: 0 var(--pad); }
     .block-gallery .grid { display: grid; gap: 16px; }
     .block-gallery .grid.cols-1 { grid-template-columns: 1fr; }
     .block-gallery .grid.cols-2 { grid-template-columns: 1fr 1fr; }
@@ -231,30 +191,10 @@
     }
     .top-bar { opacity: 0; transform: translateY(-12px); transition: opacity 500ms ease 280ms, transform 500ms ease 280ms; }
     body.ready .top-bar { opacity: 1; transform: translateY(0); }
-
-    /* ===== EMBED MODE (Framer iframe) ===== */
-    body.embed { overflow: hidden; }
-    body.embed footer { display: none; }
-    .framer-embed {
-      position: fixed;
-      top: 36px; left: 0; right: 0; bottom: 0;
-      width: 100%;
-      height: calc(100vh - 36px);
-      border: 0;
-      background: var(--bg);
-    }
   </style>
 </head>
 <body>
   <div class="page-enter"></div>
-  <!-- TOP GRADIENT BLUR (mirrors index.html) -->
-  <div class="top-blur" aria-hidden="true">
-    <div class="blur-layer blur-layer--1"></div>
-    <div class="blur-layer blur-layer--2"></div>
-    <div class="blur-layer blur-layer--3"></div>
-    <div class="blur-layer blur-layer--4"></div>
-    <div class="blur-layer blur-layer--5"></div>
-  </div>
   <header class="top-bar">
     <a class="back" href="index.html"><span class="arrow">←</span> Back to projects</a>
     <span>NAUGHTYDUK©</span>
@@ -267,19 +207,22 @@
     <a href="index.html">Index ↗</a>
   </footer>
 
-  <script src="projects.generated.js"></script>
   <script src="projects.js"></script>
   <script>
     // Default project list (mirrors PROJECTS in app.js so we can build placeholders)
     const PROJECTS = [
-      { slug: 'xiaohongshu', name: 'Xiaohongshu', category: 'PRODUCT DESIGN',              year: '2025' },
-      { slug: 'mokee',       name: 'Mokee',       category: 'BRANDING, WEB',               year: '2025' },
-      { slug: 'newtap',      name: 'NewTap',      category: 'PRODUCT DESIGN, INTERACTION', year: '2024' },
-      { slug: 'douyin',      name: 'Douyin',      category: 'PRODUCT DESIGN',              year: '2024' },
-      { slug: 'sia-tv',      name: 'Sia TV',      category: 'PRODUCT DESIGN, INTERACTION', year: '2024' },
-      { slug: 'oppo',        name: 'OPPO',        category: 'WEB DESIGN & DEVELOPMENT',    year: '2023' },
+      { name: 'T11', category: 'WEB DESIGN & DEVELOPMENT', year: '2026' },
+      { name: 'Teletech', category: 'WEB DESIGN & DEVELOPMENT', year: '2025' },
+      { name: 'Offlimits', category: 'WEB DESIGN, INTERACTION DESIGN', year: '2025' },
+      { name: 'Hyper Dreams', category: 'WEB DESIGN, INTERACTION DESIGN', year: '2024' },
+      { name: 'Voxnox', category: 'WEB DESIGN & DEVELOPMENT', year: '2024' },
+      { name: 'Halflife AI', category: 'BRANDING, AI ART', year: '2024' },
+      { name: 'Jinn Agency', category: 'BRANDING, WEB DEVELOPMENT', year: '2023' },
+      { name: 'Echo Studios', category: 'WEB DESIGN & DEVELOPMENT', year: '2023' },
+      { name: 'Phantom', category: 'WEB DESIGN, DEVELOPMENT', year: '2023' },
+      { name: 'Drift', category: 'BRANDING, MOTION', year: '2022' },
     ];
-    const slugify = s => (s.slug || s.name || s).toString().toLowerCase().replace(/\s+/g, '-');
+    const slugify = s => s.toLowerCase().replace(/\s+/g, '-');
 
     function buildDefault(proj) {
       return {
@@ -335,7 +278,7 @@
 
     function renderHero(s) {
       const mediaNode = s.media
-        ? el('div', { class: 'hero-media media-frame' },
+        ? el('div', { class: 'hero-media' },
             s.media.type === 'video'
               ? el('video', { src: s.media.src, autoplay: true, loop: true, muted: true, playsinline: true })
               : el('img', { src: s.media.src, alt: s.title || '' })
@@ -368,9 +311,7 @@
       return el('section', { class: 'block-image ' + (s.fullBleed ? 'full' : '') },
         el('div', { class: 'container' },
           el('figure', {},
-            el('div', { class: 'media-frame' },
-              el('img', { src: s.src, alt: s.caption || '' }),
-            ),
+            el('img', { src: s.src, alt: s.caption || '' }),
             s.caption ? el('figcaption', {}, s.caption) : null,
           )
         )
@@ -387,9 +328,7 @@
         playsinline: true,
       });
       return el('section', { class: 'block-video ' + (s.fullBleed ? 'full' : '') },
-        el('div', { class: 'container' },
-          el('div', { class: 'media-frame' }, v)
-        )
+        el('div', { class: 'container' }, v)
       );
     }
     function renderGallery(s) {
@@ -399,9 +338,7 @@
           el('div', { class: 'grid cols-' + cols },
             (s.items || []).map(it =>
               el('figure', {},
-                el('div', { class: 'media-frame' },
-                  el('img', { src: it.src, alt: it.caption || '' }),
-                ),
+                el('img', { src: it.src, alt: it.caption || '' }),
                 it.caption ? el('figcaption', {}, it.caption) : null,
               )
             )
@@ -442,37 +379,14 @@
         root.appendChild(missing('No project specified.'));
         return;
       }
-      const proj = PROJECTS.find(p => (p.slug || slugify(p.name)) === id);
+      const proj = PROJECTS.find(p => slugify(p.name) === id);
       if (!proj) {
         root.appendChild(missing('Project not found: ' + id));
         return;
       }
       document.title = proj.name + ' — NAUGHTYDUK©';
-
-      // 1) iframe 嵌入模式（Framer / 外部 URL）
-      const cfg = (window.PROJECT_DATA && window.PROJECT_DATA[id]) || null;
-      const embedUrl = cfg && (cfg.framerUrl || cfg.embedUrl);
-      if (embedUrl) {
-        document.body.classList.add('embed');
-        const iframe = el('iframe', {
-          class: 'framer-embed',
-          src: embedUrl,
-          allow: 'autoplay; fullscreen; clipboard-write; encrypted-media',
-          loading: 'eager',
-        });
-        root.appendChild(iframe);
-        return;
-      }
-
-      // 2) 本地 sections 渲染
-      const data = cfg || buildDefault(proj);
-      // hero 兜底：用项目级 category/year 填充顶部元信息
+      const data = (window.PROJECT_DATA && window.PROJECT_DATA[id]) || buildDefault(proj);
       data.sections.forEach(s => {
-        if (s.type === 'hero') {
-          if (!s.category) s.category = data.category || proj.category;
-          if (!s.year)     s.year     = data.year     || proj.year;
-          if (!s.title)    s.title    = proj.name;
-        }
         const fn = renderers[s.type];
         if (fn) root.appendChild(fn(s));
       });
