@@ -463,8 +463,9 @@ class DistortionManager {
       this.targetBaseScale = CONFIG.distortion.baseScale;
     }
     // Smooth lerp
-    this.intensity += (this.targetIntensity - this.intensity) * 0.035;
-    this.baseScale += (this.targetBaseScale - this.baseScale) * 0.035;
+    const lerpSpeed = this.introActive ? 0.22 : 0.035;
+    this.intensity += (this.targetIntensity - this.intensity) * lerpSpeed;
+    this.baseScale += (this.targetBaseScale - this.baseScale) * lerpSpeed;
     const ratio = window.innerWidth / window.innerHeight;
     uniforms.distortion.value.set(
       this.intensity * ratio,
@@ -493,12 +494,12 @@ class App {
     this.bindEvents();
 
     // Sphere-to-grid intro: start small + strong fisheye, expand to normal
-    this.distortionManager.startIntro(-0.7, 0.15);
+    this.distortionManager.startIntro(-0.4, 0.3);
     // Camera starts far away (small view), zooms in
-    this.camera.position.z = CONFIG.camera.z + 12;
-    this.targetCameraZ = CONFIG.camera.z + 12;
+    this.camera.position.z = CONFIG.camera.z + 6;
+    this.targetCameraZ = CONFIG.camera.z + 6;
     // Grid starts scaled down
-    this.grid.group.scale.set(0.3, 0.3, 1);
+    this.grid.group.scale.set(0.5, 0.5, 1);
     this.introScaleActive = true;
 
     // Hide loader
@@ -507,10 +508,8 @@ class App {
       // Trigger entrance animation
       requestAnimationFrame(() => {
         document.body.classList.remove('intro');
-        setTimeout(() => {
-          this.distortionManager.endIntro();
-          this.targetCameraZ = CONFIG.camera.z;
-        }, 200);
+        this.distortionManager.endIntro();
+        this.targetCameraZ = CONFIG.camera.z;
       });
     });
 
@@ -708,12 +707,12 @@ class App {
     // Camera zoom (smooth)
     this.camera.fov = CONFIG.camera.fov;
     this.camera.updateProjectionMatrix();
-    this.camera.position.z += (this.targetCameraZ - this.camera.position.z) * 0.04;
+    this.camera.position.z += (this.targetCameraZ - this.camera.position.z) * 0.18;
 
     // Intro scale animation (grid scales from small to 1.0)
     if (this.introScaleActive) {
       const s = this.grid.group.scale.x;
-      const ns = s + (1 - s) * 0.04;
+      const ns = s + (1 - s) * 0.18;
       this.grid.group.scale.set(ns, ns, 1);
       if (Math.abs(1 - ns) < 0.001) {
         this.grid.group.scale.set(1, 1, 1);
