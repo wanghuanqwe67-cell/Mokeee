@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Canvas Config Tuner</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: #111; color: #eee;
+      display: flex; height: 100vh; overflow: hidden;
+    }
+    .panel {
+      width: 320px; min-width: 320px;
+      background: #1a1a1a;
+      border-right: 1px solid #333;
+      overflow-y: auto; padding: 20px;
+    }
+    .panel h2 {
+      font-size: 13px; text-transform: uppercase;
+      letter-spacing: 0.1em; color: #888;
+      margin: 20px 0 12px; padding-bottom: 6px;
+      border-bottom: 1px solid #333;
+    }
+    .panel h2:first-child { margin-top: 0; }
+    .param { margin-bottom: 14px; }
+    .param label {
+      display: flex; justify-content: space-between;
+      font-size: 12px; color: #aaa; margin-bottom: 4px;
+    }
+    .param label span { color: #fff; font-variant-numeric: tabular-nums; }
+    .param input[type="range"] {
+      width: 100%; height: 4px;
+      -webkit-appearance: none; appearance: none;
+      background: #333; border-radius: 2px; outline: none;
+    }
+    .param input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: 14px; height: 14px; border-radius: 50%;
+      background: #fff; cursor: pointer;
+    }
+    .preview { flex: 1; position: relative; }
+    .preview iframe { width: 100%; height: 100%; border: none; }
+    .actions { margin-top: 16px; display: flex; gap: 8px; }
+    .actions button {
+      flex: 1; padding: 8px 0;
+      font-family: inherit; font-size: 11px;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      background: #333; color: #eee; border: 1px solid #555;
+      border-radius: 6px; cursor: pointer; transition: background 0.2s;
+    }
+    .actions button:hover { background: #444; }
+    .actions button.primary { background: #2563eb; border-color: #2563eb; }
+    .actions button.primary:hover { background: #1d4ed8; }
+    pre.output {
+      margin-top: 12px; padding: 10px;
+      background: #0d0d0d; border-radius: 6px;
+      font-size: 11px; color: #8f8; white-space: pre-wrap;
+      max-height: 200px; overflow-y: auto; display: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="panel" id="panel">
+  <h2>Grid 网格</h2>
+  <div class="param">
+    <label>cols <span id="v_cols">4</span></label>
+    <input type="range" id="cols" min="1" max="10" step="1" value="4">
+  </div>
+  <div class="param">
+    <label>rows <span id="v_rows">5</span></label>
+    <input type="range" id="rows" min="1" max="10" step="1" value="5">
+  </div>
+  <div class="param">
+    <label>tileWidth <span id="v_tileWidth">1.5</span></label>
+    <input type="range" id="tileWidth" min="0.5" max="4" step="0.05" value="1.5">
+  </div>
+  <div class="param">
+    <label>tileHeight <span id="v_tileHeight">0.9</span></label>
+    <input type="range" id="tileHeight" min="0.3" max="3" step="0.05" value="0.9">
+  </div>
+  <div class="param">
+    <label>gapX <span id="v_gapX">0</span></label>
+    <input type="range" id="gapX" min="0" max="1" step="0.01" value="0">
+  </div>
+  <div class="param">
+    <label>gapY <span id="v_gapY">0</span></label>
+    <input type="range" id="gapY" min="0" max="1" step="0.01" value="0">
+  </div>
+
+  <h2>Distortion 扭曲</h2>
+  <div class="param">
+    <label>flat <span id="v_flat">0</span></label>
+    <input type="range" id="flat" min="-2" max="2" step="0.005" value="0">
+  </div>
+  <div class="param">
+    <label>curved <span id="v_curved">-0.03</span></label>
+    <input type="range" id="curved" min="-2" max="2" step="0.005" value="-0.03">
+  </div>
+  <div class="param">
+    <label>baseScale <span id="v_baseScale">0.55</span></label>
+    <input type="range" id="baseScale" min="0.05" max="3" step="0.01" value="0.55">
+  </div>
+  <div class="param">
+    <label>vignetteOffset <span id="v_vignetteOffset">0.28</span></label>
+    <input type="range" id="vignetteOffset" min="0" max="2" step="0.01" value="0.28">
+  </div>
+  <div class="param">
+    <label>vignetteDarkness <span id="v_vignetteDarkness">0.24</span></label>
+    <input type="range" id="vignetteDarkness" min="0" max="2" step="0.01" value="0.24">
+  </div>
+
+  <h2>Camera 相机</h2>
+  <div class="param">
+    <label>fov <span id="v_fov">32</span></label>
+    <input type="range" id="fov" min="10" max="120" step="1" value="32">
+  </div>
+  <div class="param">
+    <label>z (距离) <span id="v_z">8.9</span></label>
+    <input type="range" id="z" min="1" max="30" step="0.1" value="8.9">
+  </div>
+  <div class="param">
+    <label>zoomDelta <span id="v_zoomDelta">1</span></label>
+    <input type="range" id="zoomDelta" min="0" max="5" step="0.1" value="1">
+  </div>
+
+  <h2>Ambient 环境光</h2>
+  <div class="param">
+    <label>strength <span id="v_strength">0.12</span></label>
+    <input type="range" id="strength" min="0" max="1" step="0.01" value="0.12">
+  </div>
+
+  <h2>Drag 拖拽</h2>
+  <div class="param">
+    <label>lerpFactor <span id="v_lerpFactor">0.31</span></label>
+    <input type="range" id="lerpFactor" min="0.01" max="1" step="0.01" value="0.31">
+  </div>
+  <div class="param">
+    <label>friction <span id="v_friction">0.855</span></label>
+    <input type="range" id="friction" min="0.5" max="0.999" step="0.001" value="0.855">
+  </div>
+
+  <div class="actions">
+    <button onclick="resetAll()">Reset</button>
+    <button class="primary" onclick="exportConfig()">Export Config</button>
+  </div>
+  <pre class="output" id="output"></pre>
+</div>
+
+<div class="preview">
+  <iframe id="frame" src="index.html"></iframe>
+</div>
+
+<script>
+  const DEFAULTS = {
+    cols: 4, rows: 5, tileWidth: 1.5, tileHeight: 0.9, gapX: 0, gapY: 0,
+    flat: 0, curved: -0.03, baseScale: 0.55, vignetteOffset: 0.28, vignetteDarkness: 0.24,
+    fov: 32, z: 8.9, zoomDelta: 1,
+    strength: 0.12,
+    lerpFactor: 0.31, friction: 0.855,
+  };
+
+  const paramMap = {
+    cols: 'grid.cols', rows: 'grid.rows',
+    tileWidth: 'grid.tileWidth', tileHeight: 'grid.tileHeight',
+    gapX: 'grid.gapX', gapY: 'grid.gapY',
+    flat: 'distortion.flat', curved: 'distortion.curved', baseScale: 'distortion.baseScale',
+    vignetteOffset: 'distortion.vignetteOffset', vignetteDarkness: 'distortion.vignetteDarkness',
+    fov: 'camera.fov', z: 'camera.z', zoomDelta: 'camera.zoomDelta',
+    strength: 'ambient.strength',
+    lerpFactor: 'drag.lerpFactor', friction: 'drag.friction',
+  };
+
+  const sliders = document.querySelectorAll('input[type="range"]');
+
+  function buildConfig() {
+    const config = {};
+    for (const [id, path] of Object.entries(paramMap)) {
+      const val = parseFloat(document.getElementById(id).value);
+      const keys = path.split('.');
+      let obj = config;
+      for (let i = 0; i < keys.length - 1; i++) {
+        obj[keys[i]] = obj[keys[i]] || {};
+        obj = obj[keys[i]];
+      }
+      obj[keys[keys.length - 1]] = val;
+    }
+    return config;
+  }
+
+  function sendConfig() {
+    const config = buildConfig();
+    const frame = document.getElementById('frame');
+    if (frame.contentWindow) {
+      frame.contentWindow.postMessage({ type: 'CONFIG_UPDATE', config }, '*');
+    }
+  }
+
+  sliders.forEach(slider => {
+    slider.addEventListener('input', () => {
+      document.getElementById('v_' + slider.id).textContent = slider.value;
+      sendConfig();
+    });
+  });
+
+  function resetAll() {
+    for (const [id, val] of Object.entries(DEFAULTS)) {
+      const el = document.getElementById(id);
+      el.value = val;
+      document.getElementById('v_' + id).textContent = val;
+    }
+    sendConfig();
+  }
+
+  function exportConfig() {
+    const lines = ['const CONFIG = {'];
+    const groups = { grid: {}, distortion: {}, camera: {}, ambient: {}, drag: {} };
+    for (const [id, path] of Object.entries(paramMap)) {
+      const val = parseFloat(document.getElementById(id).value);
+      const [g, k] = path.split('.');
+      groups[g][k] = val;
+    }
+    for (const [g, props] of Object.entries(groups)) {
+      lines.push('  ' + g + ': {');
+      for (const [k, v] of Object.entries(props)) {
+        lines.push('    ' + k + ': ' + v + ',');
+      }
+      lines.push('  },');
+    }
+    lines.push('};');
+    const out = document.getElementById('output');
+    out.textContent = lines.join('\n');
+    out.style.display = 'block';
+    navigator.clipboard.writeText(lines.join('\n')).catch(() => {});
+  }
+</script>
+</body>
+</html>

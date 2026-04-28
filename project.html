@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project — NAUGHTYDUK©</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #000;
+      --fg: #f0f0f0;
+      --fg-dim: #888;
+      --fg-muted: #555;
+      --border: rgba(255,255,255,0.08);
+      --max: 1280px;
+      --pad: 24px;
+    }
+    html, body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'Inter', -apple-system, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.55;
+      min-height: 100%;
+    }
+    a { color: inherit; text-decoration: none; }
+    img, video { display: block; max-width: 100%; height: auto; }
+
+    /* ===== TOP BAR ===== */
+    .top-bar {
+      position: fixed; top: 0; left: 0; right: 0;
+      z-index: 50;
+      display: flex; justify-content: space-between; align-items: center;
+      height: 48px; padding: 0 20px;
+      font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      background: linear-gradient(to bottom, rgba(0,0,0,0.55), rgba(0,0,0,0));
+    }
+    .top-bar a.back {
+      display: inline-flex; align-items: center; gap: 8px;
+      opacity: 0.85; transition: opacity .2s;
+    }
+    .top-bar a.back:hover { opacity: 1; }
+    .top-bar .arrow { display: inline-block; transform: translateY(-1px); }
+
+    /* ===== LAYOUT ===== */
+    main { padding-top: 48px; }
+    section { width: 100%; }
+    .container { max-width: var(--max); margin: 0 auto; padding: 0 var(--pad); }
+
+    /* HERO */
+    .hero {
+      padding: 96px 0 56px;
+    }
+    .hero .container { display: flex; flex-direction: column; gap: 28px; }
+    .hero .meta-row {
+      display: flex; gap: 24px; font-size: 10px; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--fg-dim);
+    }
+    .hero h1 {
+      font-size: clamp(40px, 7vw, 96px);
+      font-weight: 500; letter-spacing: -0.02em; line-height: 1.0;
+    }
+    .hero .subtitle {
+      font-size: clamp(16px, 1.6vw, 22px);
+      color: var(--fg-dim); max-width: 640px;
+    }
+    .hero-media {
+      margin-top: 24px;
+      width: 100%;
+      aspect-ratio: 16/9;
+      overflow: hidden;
+      border-radius: 4px;
+      background: #111;
+    }
+    .hero-media img, .hero-media video { width: 100%; height: 100%; object-fit: cover; }
+
+    /* TEXT BLOCK */
+    .block-text { padding: 80px 0; }
+    .block-text .container { display: grid; grid-template-columns: 1fr 2fr; gap: 60px; }
+    .block-text .eyebrow {
+      font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--fg-dim);
+    }
+    .block-text h2 {
+      font-size: clamp(24px, 3vw, 40px);
+      font-weight: 500; letter-spacing: -0.01em; margin-bottom: 18px;
+      line-height: 1.15;
+    }
+    .block-text p {
+      font-size: 16px; color: #c8c8c8; max-width: 720px;
+    }
+    @media (max-width: 720px) {
+      .block-text .container { grid-template-columns: 1fr; gap: 16px; }
+    }
+
+    /* IMAGE BLOCK */
+    .block-image { padding: 32px 0; }
+    .block-image.full .container { max-width: none; padding: 0; }
+    .block-image figure { display: flex; flex-direction: column; gap: 12px; }
+    .block-image img { width: 100%; }
+    .block-image figcaption {
+      font-size: 11px; color: var(--fg-dim); letter-spacing: 0.06em;
+      text-transform: uppercase; padding: 0 var(--pad);
+    }
+
+    /* VIDEO BLOCK */
+    .block-video { padding: 32px 0; }
+    .block-video.full .container { max-width: none; padding: 0; }
+    .block-video video { width: 100%; }
+
+    /* GALLERY */
+    .block-gallery { padding: 32px 0; }
+    .block-gallery .grid { display: grid; gap: 16px; }
+    .block-gallery .grid.cols-1 { grid-template-columns: 1fr; }
+    .block-gallery .grid.cols-2 { grid-template-columns: 1fr 1fr; }
+    .block-gallery .grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+    @media (max-width: 720px) {
+      .block-gallery .grid.cols-2,
+      .block-gallery .grid.cols-3 { grid-template-columns: 1fr; }
+    }
+
+    /* QUOTE */
+    .block-quote { padding: 100px 0; }
+    .block-quote .container { max-width: 880px; text-align: center; }
+    .block-quote p {
+      font-size: clamp(22px, 3vw, 36px);
+      font-weight: 400; line-height: 1.3; letter-spacing: -0.005em;
+    }
+    .block-quote cite {
+      display: block; margin-top: 24px;
+      font-style: normal; font-size: 11px; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--fg-dim);
+    }
+
+    /* META TABLE */
+    .block-meta { padding: 80px 0 120px; }
+    .block-meta .container { border-top: 1px solid var(--border); padding-top: 40px; }
+    .block-meta dl {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 32px 24px;
+    }
+    .block-meta dt {
+      font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--fg-dim); margin-bottom: 8px;
+    }
+    .block-meta dd { font-size: 15px; color: var(--fg); }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px var(--pad);
+      display: flex; justify-content: space-between;
+      font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--fg-dim);
+    }
+    footer a:hover { color: var(--fg); }
+
+    /* MISSING */
+    .missing {
+      min-height: 70vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 16px; text-align: center;
+    }
+    .missing h1 { font-size: 32px; font-weight: 500; }
+    .missing p { color: var(--fg-dim); }
+    .missing a { border-bottom: 1px solid currentColor; }
+
+    /* ===== ENTRANCE ANIMATION ===== */
+    .page-enter {
+      position: fixed; inset: 0; z-index: 200;
+      background: var(--bg);
+      pointer-events: none;
+      opacity: 1;
+      transition: opacity 500ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    body.ready .page-enter { opacity: 0; }
+
+    main { opacity: 0; transform: translateY(20px); filter: blur(8px); }
+    body.ready main {
+      opacity: 1; transform: translateY(0); filter: blur(0);
+      transition:
+        opacity 700ms cubic-bezier(0.16, 1, 0.3, 1) 80ms,
+        transform 700ms cubic-bezier(0.16, 1, 0.3, 1) 80ms,
+        filter 700ms cubic-bezier(0.16, 1, 0.3, 1) 80ms;
+    }
+    .top-bar { opacity: 0; transform: translateY(-12px); transition: opacity 500ms ease 280ms, transform 500ms ease 280ms; }
+    body.ready .top-bar { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+  <div class="page-enter"></div>
+  <header class="top-bar">
+    <a class="back" href="index.html"><span class="arrow">←</span> Back to projects</a>
+    <span>NAUGHTYDUK©</span>
+  </header>
+
+  <main id="root"></main>
+
+  <footer>
+    <span>© NAUGHTYDUK</span>
+    <a href="index.html">Index ↗</a>
+  </footer>
+
+  <script src="projects.js"></script>
+  <script>
+    // Default project list (mirrors PROJECTS in app.js so we can build placeholders)
+    const PROJECTS = [
+      { name: 'T11', category: 'WEB DESIGN & DEVELOPMENT', year: '2026' },
+      { name: 'Teletech', category: 'WEB DESIGN & DEVELOPMENT', year: '2025' },
+      { name: 'Offlimits', category: 'WEB DESIGN, INTERACTION DESIGN', year: '2025' },
+      { name: 'Hyper Dreams', category: 'WEB DESIGN, INTERACTION DESIGN', year: '2024' },
+      { name: 'Voxnox', category: 'WEB DESIGN & DEVELOPMENT', year: '2024' },
+      { name: 'Halflife AI', category: 'BRANDING, AI ART', year: '2024' },
+      { name: 'Jinn Agency', category: 'BRANDING, WEB DEVELOPMENT', year: '2023' },
+      { name: 'Echo Studios', category: 'WEB DESIGN & DEVELOPMENT', year: '2023' },
+      { name: 'Phantom', category: 'WEB DESIGN, DEVELOPMENT', year: '2023' },
+      { name: 'Drift', category: 'BRANDING, MOTION', year: '2022' },
+    ];
+    const slugify = s => s.toLowerCase().replace(/\s+/g, '-');
+
+    function buildDefault(proj) {
+      return {
+        sections: [
+          {
+            type: 'hero',
+            title: proj.name,
+            subtitle: `${proj.category} · ${proj.year}`,
+            year: proj.year,
+            category: proj.category,
+            media: { type: 'image', src: `https://picsum.photos/seed/${encodeURIComponent(proj.name)}/1920/1080` },
+          },
+          {
+            type: 'text',
+            eyebrow: 'OVERVIEW',
+            title: 'About this project',
+            body: '此项目尚未配置正式内容。请在 projects.js 中以 slug 为 key 添加自定义 sections，即可呈现专属图片、视频与文案。',
+          },
+          {
+            type: 'gallery',
+            columns: 2,
+            items: [
+              { src: `https://picsum.photos/seed/${encodeURIComponent(proj.name)}-a/900/1100` },
+              { src: `https://picsum.photos/seed/${encodeURIComponent(proj.name)}-b/900/1100` },
+            ],
+          },
+          {
+            type: 'meta',
+            items: [
+              { label: 'Project', value: proj.name },
+              { label: 'Category', value: proj.category },
+              { label: 'Year', value: proj.year },
+            ],
+          },
+        ],
+      };
+    }
+
+    function el(tag, props = {}, ...children) {
+      const n = document.createElement(tag);
+      Object.entries(props).forEach(([k, v]) => {
+        if (k === 'class') n.className = v;
+        else if (k === 'html') n.innerHTML = v;
+        else if (k.startsWith('on')) n.addEventListener(k.slice(2), v);
+        else if (v !== undefined && v !== null && v !== false) n.setAttribute(k, v === true ? '' : v);
+      });
+      children.flat().forEach(c => {
+        if (c == null || c === false) return;
+        n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+      });
+      return n;
+    }
+
+    function renderHero(s) {
+      const mediaNode = s.media
+        ? el('div', { class: 'hero-media' },
+            s.media.type === 'video'
+              ? el('video', { src: s.media.src, autoplay: true, loop: true, muted: true, playsinline: true })
+              : el('img', { src: s.media.src, alt: s.title || '' })
+          )
+        : null;
+      return el('section', { class: 'hero' },
+        el('div', { class: 'container' },
+          el('div', { class: 'meta-row' },
+            s.category ? el('span', {}, s.category) : null,
+            s.year ? el('span', {}, s.year) : null,
+          ),
+          s.title ? el('h1', {}, s.title) : null,
+          s.subtitle ? el('p', { class: 'subtitle' }, s.subtitle) : null,
+          mediaNode,
+        )
+      );
+    }
+    function renderText(s) {
+      return el('section', { class: 'block-text' },
+        el('div', { class: 'container' },
+          el('div', {}, s.eyebrow ? el('span', { class: 'eyebrow' }, s.eyebrow) : null),
+          el('div', {},
+            s.title ? el('h2', {}, s.title) : null,
+            s.body ? el('p', {}, s.body) : null,
+          )
+        )
+      );
+    }
+    function renderImage(s) {
+      return el('section', { class: 'block-image ' + (s.fullBleed ? 'full' : '') },
+        el('div', { class: 'container' },
+          el('figure', {},
+            el('img', { src: s.src, alt: s.caption || '' }),
+            s.caption ? el('figcaption', {}, s.caption) : null,
+          )
+        )
+      );
+    }
+    function renderVideo(s) {
+      const v = el('video', {
+        src: s.src,
+        poster: s.poster || '',
+        controls: !s.autoplay,
+        autoplay: s.autoplay !== false,
+        loop: s.loop !== false,
+        muted: s.muted !== false,
+        playsinline: true,
+      });
+      return el('section', { class: 'block-video ' + (s.fullBleed ? 'full' : '') },
+        el('div', { class: 'container' }, v)
+      );
+    }
+    function renderGallery(s) {
+      const cols = s.columns || 2;
+      return el('section', { class: 'block-gallery' },
+        el('div', { class: 'container' },
+          el('div', { class: 'grid cols-' + cols },
+            (s.items || []).map(it =>
+              el('figure', {},
+                el('img', { src: it.src, alt: it.caption || '' }),
+                it.caption ? el('figcaption', {}, it.caption) : null,
+              )
+            )
+          )
+        )
+      );
+    }
+    function renderQuote(s) {
+      return el('section', { class: 'block-quote' },
+        el('div', { class: 'container' },
+          el('p', {}, s.text),
+          s.author ? el('cite', {}, s.author) : null,
+        )
+      );
+    }
+    function renderMeta(s) {
+      return el('section', { class: 'block-meta' },
+        el('div', { class: 'container' },
+          el('dl', {},
+            (s.items || []).flatMap(it => [
+              el('div', {}, el('dt', {}, it.label), el('dd', {}, it.value)),
+            ])
+          )
+        )
+      );
+    }
+
+    const renderers = {
+      hero: renderHero, text: renderText, image: renderImage,
+      video: renderVideo, gallery: renderGallery, quote: renderQuote, meta: renderMeta,
+    };
+
+    function render() {
+      const params = new URLSearchParams(location.search);
+      const id = params.get('id');
+      const root = document.getElementById('root');
+      if (!id) {
+        root.appendChild(missing('No project specified.'));
+        return;
+      }
+      const proj = PROJECTS.find(p => slugify(p.name) === id);
+      if (!proj) {
+        root.appendChild(missing('Project not found: ' + id));
+        return;
+      }
+      document.title = proj.name + ' — NAUGHTYDUK©';
+      const data = (window.PROJECT_DATA && window.PROJECT_DATA[id]) || buildDefault(proj);
+      data.sections.forEach(s => {
+        const fn = renderers[s.type];
+        if (fn) root.appendChild(fn(s));
+      });
+    }
+    function missing(msg) {
+      return el('div', { class: 'missing' },
+        el('h1', {}, 'Project not found'),
+        el('p', {}, msg),
+        el('a', { href: 'index.html' }, '← Back to projects'),
+      );
+    }
+    render();
+    requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.add('ready')));
+  </script>
+</body>
+</html>
